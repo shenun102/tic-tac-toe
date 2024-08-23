@@ -99,6 +99,13 @@ main {
   text-align: center;
 }
 
+.player-name-1,
+.player-name-2 {
+  font-size: 1.5rem;
+  padding: 1rem;
+  text-align: center;
+}
+
 .input {
   width: 90%;
   height: 90%;

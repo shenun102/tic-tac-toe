@@ -7,8 +7,10 @@ const Gameboard = (() => {
   //  Methods for the board
 
   // get current state of board
-  const getBoard = (cell, marker) => {
+  const renderBoard = (cell, marker) => {
+    // Display board for debugging purposes
     console.log(board, cell);
+    // Select the grid cell that the player clicked on and add the marker
     const gridCell = document.querySelector(
       `.input[data-grid-id="${cell + 1}"]`
     );
@@ -16,7 +18,6 @@ const Gameboard = (() => {
     gridCell.style.fontWeight = "bold";
     gridCell.style.fontSize = "3rem";
     gridCell.textContent = marker;
-    console.log("Hello", gridCell);
   };
 
   // update a cell on the board
@@ -25,22 +26,28 @@ const Gameboard = (() => {
     if (board[index] === "") {
       board[index] = marker;
     } else {
-      console.log("ughhhh");
+      // return true for a marker existing already
       return true;
     }
   };
 
   // reset the board
   const resetBoard = () => {
+    // loop through the board array and set every item to ""
     for (let i = 0; i < board.length; i++) {
       board[i] = "";
     }
+    // Resets the display of the grid too
+    const resetCells = document.querySelectorAll(".input");
+    resetCells.forEach((cell) => {
+      cell.textContent = "";
+    });
   };
-
-  return { getBoard, updateBoard, resetBoard };
+  return { renderBoard, updateBoard, resetBoard };
 })();
 
-// Player object
+// Player creation object
+// Empty array is for storing player's marked cells combination
 
 const Player = (name, marker) => {
   return { name, marker, playsIndex: [] };
@@ -58,6 +65,7 @@ const GameController = (() => {
   // initiate the game / reset game method
   const startGame = (p1, p2) => {
     players = [Player(p1, "X"), Player(p2, "O")];
+    // Resets the board when game begins
     Gameboard.resetBoard();
     currentPlayerIndex = 0;
     gameOver = false;
@@ -68,37 +76,41 @@ const GameController = (() => {
 
   // Play turn method
   const playTurn = (cell) => {
+    // Check if the game is over or not
+    if (gameOver) return;
+    // Get the current player Object
+    let currentPlayer = getCurrentPlayer();
+    // Update Board
+    // true or false
+    const cellTaken = Gameboard.updateBoard(cell, currentPlayer.marker);
+    // If the cell is indeed already taken, stop the function
+    if (cellTaken) return;
+    // Add the cell to player's list of cells taken
+    currentPlayer.playsIndex.push(cell);
+    // Update the board's display with the player's marker in the selected cell
+    Gameboard.renderBoard(cell, currentPlayer.marker);
+    // Switch players, since current player's turn is over
+    currentPlayerIndex = currentPlayerIndex == 0 ? 1 : 0;
+    currentPlayer = getCurrentPlayer();
+
     const checkWinner = winner();
     // Check for a winner and set gameOver to true if there is one
     if (checkWinner === "Player 1 Wins") gameOver = true;
     if (checkWinner === "Player 2 Wins") gameOver = true;
     // Stop the game since the game is over
     if (gameOver) return;
-    console.log(currentPlayerIndex);
-    // Get the current player Object
-    let currentPlayer = getCurrentPlayer();
-    console.log(currentPlayer, "The game!");
 
-    // Update Board
-    const cellTaken = Gameboard.updateBoard(cell, currentPlayer.marker);
-    // If the cell is indeed already taken, stop the function
-    if (cellTaken) return;
-    // Add play index to player array
-    currentPlayer.playsIndex.push(cell);
-    // Get the board
-    Gameboard.getBoard(cell, currentPlayer.marker);
-    // Switch players
-    currentPlayerIndex = currentPlayerIndex == 0 ? 1 : 0;
-    console.log("after 1 round, the current player is now", currentPlayerIndex);
-    currentPlayer = getCurrentPlayer();
-    console.log(currentPlayer, "The game!");
+    // Update announcement for player turn
+    document.querySelector(
+      ".announcement"
+    ).textContent = `${currentPlayer.name}'s turn`;
   };
 
   // Check for a win
   const winner = () => {
+    // Convert the array of marked cells into sets for easier comparison
     let pOnePlays = new Set(players[0].playsIndex);
     let pTwoPlays = new Set(players[1].playsIndex);
-    console.log(pOnePlays, pTwoPlays);
     let winCombos = [
       [0, 1, 2],
       [3, 4, 5],
@@ -112,11 +124,13 @@ const GameController = (() => {
     // for each combination in the combinations list
     for (let combo of winCombos) {
       if (combo.every((item) => pOnePlays.has(item))) {
-        console.log("Player 1 wins");
+        document.querySelector(".announcement").textContent =
+          "Congrats Player 1, You Win!";
         return "Player 1 Wins";
       }
       if (combo.every((item) => pTwoPlays.has(item))) {
-        console.log("Player 2 wins");
+        document.querySelector(".announcement").textContent =
+          "Congrats Player 2, You Win!";
         return "Player 2 Wins";
       }
     }
@@ -127,11 +141,25 @@ const GameController = (() => {
   return { startGame, playTurn, getCurrentPlayer };
 })();
 
+// Display Controller Function
+
 const displayController = () => {
   // Start the game
-  GameController.startGame("The Chosen One", "The Antagonist");
-  // Get the current player
-  GameController.getCurrentPlayer();
+  const startBtn = document.querySelector(".start-game");
+  startBtn.addEventListener("click", startGame);
+  function startGame() {
+    const playerOne = prompt("Player 1 Name:");
+    const playerTwo = prompt("Player 2 Name:");
+    // Start the game
+    GameController.startGame(playerOne, playerTwo);
+    // Display player names
+    document.querySelector(".player-name-1").textContent = playerOne;
+    document.querySelector(".player-name-2").textContent = playerTwo;
+    // Change announcement
+    document.querySelector(".announcement").textContent = `${playerOne}'s turn`;
+    // Get the current player
+    GameController.getCurrentPlayer();
+  }
 
   // Play a round
   const gridInput = document.querySelector(".grid-container");
@@ -142,20 +170,6 @@ const displayController = () => {
     const gridId = element.dataset.gridId;
     GameController.playTurn(gridId - 1);
   }
-
-  // Render the display
-
-  // // Play a round
-  // GameController.playTurn(0);
-  // // Play a round
-  // GameController.playTurn(7);
-  // // Player 1 wins
-  // GameController.playTurn(1);
-  // GameController.playTurn(3);
-  // GameController.playTurn(2);
-  // GameController.playTurn(6);
-  // GameController.playTurn();
-  // GameController.startGame();
 };
 
 displayController();
