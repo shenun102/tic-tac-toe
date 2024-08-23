@@ -20,6 +20,11 @@ const Gameboard = (() => {
     gridCell.textContent = marker;
   };
 
+  // Get array of boards
+  const getBoard = () => {
+    return board;
+  };
+
   // update a cell on the board
   const updateBoard = (index, marker) => {
     // If there is already a marker there
@@ -43,7 +48,7 @@ const Gameboard = (() => {
       cell.textContent = "";
     });
   };
-  return { renderBoard, updateBoard, resetBoard };
+  return { renderBoard, getBoard, updateBoard, resetBoard };
 })();
 
 // Player creation object
@@ -97,6 +102,11 @@ const GameController = (() => {
     // Check for a winner and set gameOver to true if there is one
     if (checkWinner === "Player 1 Wins") gameOver = true;
     if (checkWinner === "Player 2 Wins") gameOver = true;
+    // Checks for tie
+    const checkTie = isTie();
+    if (checkTie) {
+      console.log("It's a tie");
+    }
     // Stop the game since the game is over
     if (gameOver) return;
 
@@ -137,6 +147,16 @@ const GameController = (() => {
   };
 
   // check for a tie
+  const isTie = () => {
+    const board = Gameboard.getBoard();
+    console.log(board);
+    // Check if all cells are filled
+    const boardFull = board.every((cell) => cell !== "");
+    // If all cells are full 'boardFull = true' then its a tie
+    return boardFull;
+  };
+
+  // Switch player function
 
   return { startGame, playTurn, getCurrentPlayer };
 })();
