@@ -68,7 +68,7 @@ const GameController = (() => {
   const startGame = (p1, p2) => {
     players = [Player(p1, "X"), Player(p2, "O")];
     // Resets the board when game begins
-    Gameboard.resetBoard();
+    resetBoard();
     currentPlayerIndex = 0;
     gameOver = false;
   };
@@ -81,7 +81,8 @@ const GameController = (() => {
     // Check if the game start button has been clcicked
     // if the game is over
     // or if the cell is already taken
-    if (players.length === 0 || gameOver || Gameboard.getBoard()[cell] !== "") return;
+    if (players.length === 0 || gameOver || Gameboard.getBoard()[cell] !== "")
+      return;
 
     // If both are false:
     let currentPlayer = getCurrentPlayer(); // Get the current player Object
@@ -99,6 +100,7 @@ const GameController = (() => {
     } else {
       // Switch players, since current player's turn is over
       currentPlayerIndex = currentPlayerIndex == 0 ? 1 : 0;
+      currentPlayer = getCurrentPlayer();
       updateAnnouncement(`${currentPlayer.name}'s turn`);
     }
   };
@@ -141,7 +143,11 @@ const GameController = (() => {
     announcement.textContent = text;
   };
 
-  return { startGame, playTurn, getCurrentPlayer };
+  const resetBoard = () => {
+    Gameboard.resetBoard();
+  };
+
+  return { startGame, playTurn, getCurrentPlayer, resetBoard };
 })();
 
 // Display Controller Function
@@ -156,8 +162,17 @@ const displayController = (() => {
 
   // Start game function
   const handleStartGame = () => {
-    const playerOne = prompt("Player 1 Name:");
-    const playerTwo = prompt("Player 2 Name:");
+    if (startBtn.textContent === "Restart") {
+      restartGame();
+      GameController.resetBoard();
+      updateAnnouncement("Please enter names and start the game!");
+      return;
+    }
+
+    const playerOneInput = document.querySelector("#player-1");
+    const playerTwoInput = document.querySelector("#player-2");
+    const playerOne = playerOneInput.value;
+    const playerTwo = playerTwoInput.value;
     if (!playerOne || !playerTwo) {
       updateAnnouncement("Please enter valid names for both players!");
       return;
@@ -168,6 +183,8 @@ const displayController = (() => {
     updatePlayerNames(playerOne, playerTwo);
     // Change announcement
     updateAnnouncement(`${playerOne}'s turn`);
+
+    startBtn.textContent = `Restart`;
   };
 
   // Handle grid click input
@@ -183,14 +200,29 @@ const displayController = (() => {
     announcement.textContent = text;
   };
 
+  // Enter Player Name function
+  const enterPlayerNames = () => {
+    const htmlOne = `<input type="text" name="player_name" id="player-1" />`;
+    const htmlTwo = `<input type="text" name="player_name" id="player-2" />`;
+    playerName1.innerHTML = htmlOne;
+    playerName2.innerHTML = htmlTwo;
+  };
+
   // Update player names in UI function
   const updatePlayerNames = (playerOne, playerTwo) => {
     playerName1.textContent = playerOne;
     playerName2.textContent = playerTwo;
   };
 
+  // Restart Game
+  const restartGame = () => {
+    enterPlayerNames();
+    startBtn.textContent = `Start Game`;
+  };
+
   // Initialise the display controller (i.e. set up event listeners)
   const init = () => {
+    enterPlayerNames();
     // Start the game
     startBtn.addEventListener("click", handleStartGame);
     // Play a round
