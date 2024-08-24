@@ -8,8 +8,6 @@ const Gameboard = (() => {
 
   // get current state of board
   const renderBoard = (cell, marker) => {
-    // Display board for debugging purposes
-    console.log(board, cell);
     // Select the grid cell that the player clicked on and add the marker
     const gridCell = document.querySelector(
       `.input[data-grid-id="${cell + 1}"]`
@@ -22,6 +20,8 @@ const Gameboard = (() => {
 
   // Get array of boards
   const getBoard = () => {
+    // Display board for debugging purposes
+    console.log(board);
     return board;
   };
 
@@ -30,10 +30,7 @@ const Gameboard = (() => {
     // If there is already a marker there
     if (board[index] === "") {
       board[index] = marker;
-    } else {
-      // return true for a marker existing already
-      return true;
-    }
+    } else return;
   };
 
   // reset the board
@@ -81,46 +78,34 @@ const GameController = (() => {
 
   // Play turn method
   const playTurn = (cell) => {
-    // Check if the game is over or not
-    if (gameOver) return;
-    // Get the current player Object
-    let currentPlayer = getCurrentPlayer();
-    // Update Board
-    // true or false
-    const cellTaken = Gameboard.updateBoard(cell, currentPlayer.marker);
-    // If the cell is indeed already taken, stop the function
-    if (cellTaken) return;
-    // Add the cell to player's list of cells taken
-    currentPlayer.playsIndex.push(cell);
-    // Update the board's display with the player's marker in the selected cell
-    Gameboard.renderBoard(cell, currentPlayer.marker);
-    // Switch players, since current player's turn is over
-    currentPlayerIndex = currentPlayerIndex == 0 ? 1 : 0;
-    currentPlayer = getCurrentPlayer();
+    // Check if the game is over, or the cell is already taken
+    if (gameOver || Gameboard.getBoard()[cell] !== "") return;
 
-    const checkWinner = winner();
-    // Check for a winner and set gameOver to true if there is one
-    if (checkWinner === "Player 1 Wins") gameOver = true;
-    if (checkWinner === "Player 2 Wins") gameOver = true;
-    // Checks for tie
-    const checkTie = isTie();
-    if (checkTie) {
-      console.log("It's a tie");
+    // If both are false:
+    let currentPlayer = getCurrentPlayer(); // Get the current player Object
+    Gameboard.updateBoard(cell, currentPlayer.marker); // Update Board
+    currentPlayer.playsIndex.push(cell); // Add the cell to player's list of cells taken
+    Gameboard.renderBoard(cell, currentPlayer.marker); // Render marker into cell on page
+
+    // Check for a winner
+    if (winner(currentPlayer)) {
+      gameOver = true;
+      updateAnnouncement(`Congrats ${currentPlayer.name}, You Win!`);
+    } else if (isTie()) {
+      gameOver = true;
+      updateAnnouncement("It's a tie!");
+    } else {
+      // Switch players, since current player's turn is over
+      currentPlayerIndex = currentPlayerIndex == 0 ? 1 : 0;
+      updateAnnouncement(`${currentPlayer.name}'s turn`);
     }
-    // Stop the game since the game is over
-    if (gameOver) return;
-
-    // Update announcement for player turn
-    document.querySelector(
-      ".announcement"
-    ).textContent = `${currentPlayer.name}'s turn`;
   };
 
   // Check for a win
-  const winner = () => {
+  const winner = (player) => {
     // Convert the array of marked cells into sets for easier comparison
-    let pOnePlays = new Set(players[0].playsIndex);
-    let pTwoPlays = new Set(players[1].playsIndex);
+    let playerCombos = new Set(player.playsIndex);
+
     let winCombos = [
       [0, 1, 2],
       [3, 4, 5],
@@ -131,32 +116,28 @@ const GameController = (() => {
       [0, 4, 8],
       [2, 4, 6],
     ];
+
     // for each combination in the combinations list
     for (let combo of winCombos) {
-      if (combo.every((item) => pOnePlays.has(item))) {
-        document.querySelector(".announcement").textContent =
-          "Congrats Player 1, You Win!";
-        return "Player 1 Wins";
-      }
-      if (combo.every((item) => pTwoPlays.has(item))) {
-        document.querySelector(".announcement").textContent =
-          "Congrats Player 2, You Win!";
-        return "Player 2 Wins";
-      }
+      if (combo.every((item) => playerCombos.has(item))) return true;
     }
   };
 
   // check for a tie
   const isTie = () => {
-    const board = Gameboard.getBoard();
-    console.log(board);
+    // const board = Gameboard.getBoard();
+    // console.log(board);
     // Check if all cells are filled
     const boardFull = board.every((cell) => cell !== "");
     // If all cells are full 'boardFull = true' then its a tie
     return boardFull;
   };
 
-  // Switch player function
+  // Change announcement function
+  const updateAnnouncement = (text) => {
+    const announcement = document.querySelector(".announcement");
+    announcement.textContent = text;
+  };
 
   return { startGame, playTurn, getCurrentPlayer };
 })();
@@ -185,7 +166,7 @@ const displayController = () => {
   const gridInput = document.querySelector(".grid-container");
   gridInput.addEventListener("click", displayBoard);
   function displayBoard(e) {
-    element = e.target;
+    const element = e.target;
     if (!element.classList.contains("input")) return;
     const gridId = element.dataset.gridId;
     GameController.playTurn(gridId - 1);
